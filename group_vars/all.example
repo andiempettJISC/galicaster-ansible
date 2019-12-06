@@ -1,0 +1,32 @@
+---
+
+# group_vars/all example file. this file should be encrypted for the obvious security problems. see ansible vault
+# some of these vars will not mean anything unless you run the associated service. In this case, leave as default
+
+# OS username
+ca_username: galicaster
+
+# Opencast credentials
+GC_matterhorn_host : https://develop.opencast.org
+GC_matterhorn_user : admin
+GC_matterhorn_password : opencast
+GC_matterhorn_workflow : default
+
+# Nagios
+nagios_server: nagios.oc.example.com
+nagios_server_user: nagios
+
+# proxy servers if used
+http_proxy_server: ''
+https_proxy_server: ''
+
+# firewall range to allow
+firewall_range: 192.168.0.0/16 10.2.0.0/16
+ssh_allow: 192.168.0.0/16
+
+# Capture agent VNC password
+ca_vnc_password: password
+
+# debian and fileserver private repositories for storing driver, lecturesight source and other files
+deb_repo_hostname: false
+repo_hostname: http://repo.example.com/repo/

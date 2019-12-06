@@ -1,0 +1,5 @@
+[capture-agents-v4l2]
+example-ca ansible_ssh_host=127.0.0.1 ansible_ssh_port=22 ansible_release_host=127.0.0.1 ansible_custom_hostname=example-hostname deploy_environment=staging
+
+[capture-agents:children]
+capture-agents-v4l2

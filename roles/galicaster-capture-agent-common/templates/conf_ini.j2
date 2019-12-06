@@ -1,0 +1,64 @@
+##### ANSIBLE INFO ######
+# {{ ansible_managed }}
+##  END ANSIBLE INFO  ##
+[basic]
+profile = {{ GC_profile }}
+resolution = {{ GC_resolution }}
+homepage = rec
+quit = False
+
+[logger]
+path = {{ logfile }}
+
+[recorder]
+autorecover = True
+pausetype = recording
+
+[repository]
+recoverytype = save
+
+[ingest]
+active = True
+visible_tracks = {{ GC_send_config }}
+host = {{ matterhorn_host }}
+username = {{ matterhorn_user }}
+password = {{ matterhorn_password }}
+workflow = {{ matterhorn_workflow }}
+workflow-parameters = {{ workflow_params }}
+manual = immediately
+scheduled = {{ ingest_time }}
+hostname = {{ ca_matterhorn_name }}
+address = {{ ip_address }}
+multiple-ingest = True
+random-ingest = True
+stop-admin-ingest = True
+connect_timeout = 60
+timeout = 60
+
+[plugins]
+noaudiodialog = False
+appearance = True
+checkrepo = True
+retryingest = True
+cleanstale = True
+
+[heartbeat]
+night = {{ ['20','21','22','23','00','01','02','03','04'] | random }}:{{ 5 | random }}{{ 9 | random }}
+short = 60
+long = 600
+
+[retryingest]
+check_ingested = False
+check_published = False
+check_state = True
+check_after = 1800
+nightly = True
+
+[cleanstale]
+maxarchivaldays = {{ max_save_mp_days }}
+
+[checkrepo]
+delay_merge = True
+
+[allows]
+overlap = False

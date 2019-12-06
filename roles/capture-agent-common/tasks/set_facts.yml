@@ -1,0 +1,22 @@
+## set_facts.yml used to set vars between small differences in hardware for example
+---
+- name: "Get motherboard model"
+  shell: dmidecode -s baseboard-product-name
+  ignore_errors: yes
+  register: motherboard
+
+# example special HW CA
+- name: setting facts for Generic CA
+  set_fact:
+    legacy: False
+    partnum: "3"
+    partedline: "2"
+    isobootpart: "hd0,gpt3"
+    mb: "{{ motherboard.stdout }}"
+    cpu: "{{ cpu_model.stdout }}"
+    GC_line_in_source: default
+    nagios_temp_sensor: '"Core 0"'
+    nagios_temp_warn: 85
+    nagios_temp_crit: 91
+    nic_number: "{{ 2 if wificard.rc == 0 else 3 }}"
+  when: motherboard.stdout in ['special-motherboard-model']

@@ -1,0 +1,17 @@
+---
+- hosts: capture-agents
+  remote_user: root
+  roles:
+      - capture-agent-common
+      - galicaster-capture-agent-common
+  environment:
+    http_proxy: "{{ http_proxy_server }}"
+    https_proxy: "{{ https_proxy_server }}"
+
+- hosts: capture-agents-v4l2
+  remote_user: root
+  roles:
+      - v4l2-common
+  environment:
+    http_proxy: "{{ http_proxy_server }}"
+    https_proxy: "{{ https_proxy_server }}"

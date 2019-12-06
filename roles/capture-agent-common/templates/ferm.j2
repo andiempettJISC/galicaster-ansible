@@ -1,0 +1,32 @@
+##### ANSIBLE INFO ######
+# {{ ansible_managed }}
+##  END ANSIBLE INFO  ##
+table filter {
+    chain INPUT {
+        mod state state (ESTABLISHED RELATED) ACCEPT;
+        # Ping
+        proto icmp ACCEPT;
+        # localhost
+        interface lo ACCEPT;
+
+####### Host specific rules
+
+        ####### Galicaster Capture Agent rules
+
+        # SSH
+        saddr ({{ firewall_range }}) proto tcp dport ssh ACCEPT;
+
+        # VNC
+        saddr ({{ firewall_range }}) proto tcp dport 5800 ACCEPT;
+        saddr ({{ firewall_range }}) proto tcp dport 5900 ACCEPT;
+
+        # Nagios
+        saddr ({{ firewall_range }}) proto tcp dport 5666 ACCEPT;
+
+        # REJECT
+        REJECT reject-with icmp-host-prohibited;
+    }
+    chain FORWARD {
+        REJECT reject-with icmp-host-prohibited;
+    }
+}
