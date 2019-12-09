@@ -8,8 +8,8 @@ ca_username: galicaster
 
 # Opencast credentials
 GC_matterhorn_host : https://develop.opencast.org
-GC_matterhorn_user : admin
-GC_matterhorn_password : opencast
+GC_matterhorn_user : opencast_system_account
+GC_matterhorn_password : CHANGE_ME
 GC_matterhorn_workflow : default
 
 # Nagios
