@@ -6,41 +6,41 @@ Ansible configuration management Galicaster Capture Captures Agents.
 * [Ansible](http://docs.ansible.com)
 
 ### Running ###
-local running Ansible version ansible 2.1.2.0 + required
-remote using ubuntu 16.04
-remote configured with the user 'galicaster'
-remote user configured with root level key based ssh access
-An ssh key file to access the root account on the remote client
+your local host running Ansible version ansible 2.1.2.0 + required
+your remote host using ubuntu 16.04
+the remote host pre configured with the username `galicaster`
+the remote host configured with `root` level key based ssh access
+An ssh key file to access the `root` account on the remote client
 
 ### Out of the Box run ###
 to run on localhost:
-`cp all.example all`
+`cp group_vars/all.example group_vars/all`
 
 make sure you can ssh into localhost using `root` account using a private key file
 make sure there is a `galicaster` user on the system who is a member of the `sudoers` group
 
 open a terminal session and execute:
 
-`ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible`
+`ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/private-key-file`
 
 using any other type of host group or any of the extra vars may make the run fail
 without the proper configuration and services being available.
 
 
-### Examples ###
+### Run Examples ###
 all hosts:
 ```
-ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --ask-vault-pass
+ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible
 
 ```
 
-just a single host:
+just a single host using the --limit parameter:
 ```
-ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --ask-vault-pass --limit example-ca
+ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --limit example-ca
 
 ```
-specific tag:
+limiting the tasks executed to a specific tag:
 ```
-ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --ask-vault-pass --limit mtt-test-a --tags apt,galicaster
+ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --limit example-ca --tags apt,galicaster
 
 ```
