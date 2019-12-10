@@ -69,7 +69,7 @@ make sure there is a `galicaster` user on the system who is a member of the `sud
 
 open a terminal session and execute:
 
-`ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/private-key-file`
+`ansible-playbook capture-agent.yml -i hosts --private-key=~/id_rsa`
 
 using any other type of host group or any of the extra vars may make the run fail
 without the proper configuration and services being available.
@@ -78,17 +78,17 @@ without the proper configuration and services being available.
 ### Run Examples ###
 all hosts:
 ```
-ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible
+ansible-playbook capture-agent.yml -i hosts --private-key=~/id_rsa
 
 ```
 
 just a single host using the --limit parameter:
 ```
-ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --limit example-ca
+ansible-playbook capture-agent.yml -i hosts --private-key=~/id_rsa --limit example-ca
 
 ```
 limiting the tasks executed to a specific tag:
 ```
-ansible-playbook capture-agent.yml -i hosts --private-key=~/.ssh/ca-ansible --limit example-ca --tags apt,galicaster
+ansible-playbook capture-agent.yml -i hosts --private-key=~/id_rsa --limit example-ca --tags apt,galicaster
 
 ```
