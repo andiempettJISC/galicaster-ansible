@@ -1,6 +1,8 @@
 # Capture Agent Configuration #
 
 Ansible configuration management Galicaster Capture Captures Agents.
+This should only be used as an example or referance for your own playbook(s)
+and definitely customised for your needs
 
 ### Resources ###
 * [Ansible](http://docs.ansible.com)
