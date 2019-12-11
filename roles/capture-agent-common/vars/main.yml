@@ -1,7 +1,6 @@
 ## capture-agent-common/vars
 ---
 host_ip_address: "{{ '127.0.0.1' if ip_address == 'dhcp' else ip_address }}"
-custom_deb_repo: "{{ deb_repo_hostname }}{{ custom_deb_release }}"
 
 logfile: "{{ GC_log_path }}"
 
