@@ -1,13 +1,5 @@
 ## galicaster-capture-agent-common/tasks
 ---
-# Galicaster installed via git now
-# - name: "Remove Current Galicaster version"
-#   apt: >
-#           pkg=galicaster
-#           state=absent
-#           force=yes
-#   when:   remove_galicaster|default(false)
-#   tags:   galicaster
 
 - name: "Install Galicaster support packages"
   apt: >
@@ -49,22 +41,68 @@
           - gstreamer1.0-vaapi
           - gstreamer1.0-tools
           - xdotool
+  when: codename.stdout == 'xenial'
+  tags:
+          - galicaster
+          - on_top
+          - gst_update
+
+- name: "Install Galicaster support packages"
+  apt: >
+          pkg={{ item }}
+          update_cache=yes
+          state=latest
+          force=yes
+  with_items:
+          - guvcview
+          - python2.7
+          - python-pip
+          - python-setuptools
+          - gstreamer1.0-plugins-base
+          - gstreamer1.0-plugins-bad
+          - gstreamer1.0-plugins-ugly
+          - gstreamer1.0-plugins-good
+          - gstreamer1.0-pulseaudio
+          - gstreamer1.0-alsa
+          - gstreamer1.0-libav
+          - gir1.2-gstreamer-1.0
+          - gir1.2-gtk-3.0
+          - gir1.2-gst-plugins-base-1.0
+          - python-pycurl
+          - python-bottle
+          - python-glade2
+          - python-icalendar
+          - python-gi
+          - python-dbus
+          - python-simplejson
+          - onboard
+          - onboard-data
+          - ffmpeg
+          - python-pil
+          - python-paramiko
+          - imagemagick
+          - python-alsaaudio
+          - nfs-common
+          - git
+          - python-requests
+          - gstreamer1.0-vaapi
+          - gstreamer1.0-tools
+          - xdotool
+          - vainfo
+          - mesa-va-drivers
+          - i965-va-driver
+          - va-driver-all
+          - vdpau-va-driver
+  when: codename.stdout == 'bionic'
   tags:
           - galicaster
           - on_top
           - gst_update
 
 - name: "Install Galicaster python pip support packages"
-  pip: >
-          name={{ item }}
-          state=latest
-  with_items:
-          - icalendar
-          - libusb1
-          - pyscreenshot
-          - python-meteor
-          - python-ddp
-          - pyserial
+  pip:
+          name: ['icalendar', 'libusb1', 'pyscreenshot', 'python-meteor', 'python-ddp', 'pyserial', 'blinkstick']
+          state: latest
   tags:
           - galicaster
           - pip

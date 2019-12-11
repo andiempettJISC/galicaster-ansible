@@ -10,9 +10,12 @@
   shell: lsb_release -c | cut -f2
   register: codename
 
+- debug:
+    msg: "{{ codename.stdout }}"
+
 - fail:
-    msg: "This ansible playbook requires ubuntu xenial 16.04 be installed before it will run"
-  when: ansible_distribution == 'Ubuntu' and codename.stdout != 'xenial'
+    msg: "This ansible playbook requires ubuntu xenial 16.04 or ubuntu bionic 18.04 be installed before it will run"
+  when: ansible_distribution != 'Ubuntu' and codename.stdout not in ['xenial', 'bionic']
 
 ## APT
 
@@ -74,35 +77,17 @@
           /bin/rm -rf /etc/apt/sources.list.d/*
   tags:   apt
 
-- name: "Add local apt sources"
-  become_method: sudo
-  apt_repository: >
-          repo="{{ item }}"
-          state=present
-  with_items:
-          - "deb {{ custom_deb_repo }} all/"
-  when: deb_repo_hostname|default(false)
-  tags:   apt
 
 - name: "Update apt cache"
-  apt: update_cache=yes
+  apt: update_cache=yes force_apt_get=yes
   become_method: sudo
   tags:
           - apt
           - apt_update
           - gst_update
 
-- name: "Remove broken packages"
-  apt: >
-          pkg={{ item }}
-          state=absent
-  with_items:
-          - libgweather-common
-  tags:
-          - apt
-          - apt_update
 
-- name: "Upgrade kernel to latest HWE version"
+- name: "Upgrade kernel to latest HWE version when 16.04"
   apt:
     pkg: '{{ item }}'
     dpkg_options: 'force-confold,force-confdef'
@@ -111,7 +96,7 @@
           - linux-generic-hwe-16.04
           - xserver-xorg-hwe-16.04
           - linux-headers-generic-hwe-16.04
-  when: upgrade_hwe|default(false)
+  when: upgrade_hwe|default(false) and codename.stdout == 'xenial'
   register: kernel_update
   notify:
     - Restart host
@@ -134,9 +119,10 @@
 
 - name: "do a dist upgrade"
   apt:
-    upgrade: dist
+    upgrade: yes
+    force: yes
     dpkg_options: 'force-confold,force-confdef'
-  when: (cpu is defined and cpu >= '6') or (upgrade_os|default(false))
+  when: (upgrade_os|default(false))
   register: kernel_update
   notify:
     - Restart host
@@ -156,7 +142,7 @@
 
 ## SYSTEM
 
-- name: "Install system support packages"
+- name: "Install system support packages 16.04"
   apt: >
           pkg={{ item }}
           state=present
@@ -174,21 +160,51 @@
           - python-yaml
           - firefox
           - mediainfo
+          - openssl
+          - libssl1.0.0
+  when: codename.stdout == 'xenial'
   tags:
           - system
           - vnc
           - unity
 
-- name: "Install specific system security updates"
-  apt: >
-          pkg={{ item }}
-          state=latest
-  with_items:
-          - openssl
-          - libssl1.0.0
+
+- name: "Install system support packages 18.04"
+  apt:
+    name:
+      - ssh
+      - nano
+      - snmp
+      - snmpd
+      - x11vnc
+      - ntp
+      - ntpdate
+      - nedit
+      - python-pip
+      - pavucontrol
+      - unity-lens-applications
+      - unity-control-center
+      - python-yaml
+      - firefox
+      - mediainfo
+      - avahi-daemon
+      - cec-utils
+      - v4l-utils
+      - libcec4
+      - libx264-dev
+      - nasm
+      - yasm
+    state: present
+  when: codename.stdout == 'bionic'
+  tags:
+          - system
+          - vnc_install
+          - ntp
+          - unity
+          - cec
 
 ## APT PKG REMOVAL
-
+## use this to remove packages you dont want on the system. office apps etc...
 - name: "Remove packages"
   apt: >
           pkg={{ item }}
@@ -224,22 +240,19 @@
           dest=/etc/ca_name
   tags:   ca_config
 
-- name: "Setup automatic login"
+- name: "Setup automatic login 16.04"
   template: >
           src=lightdm.j2
           dest=/etc/lightdm/lightdm.conf
+  when:   codename.stdout == 'xenial'
   tags:   ca_config
 
-- name: "Copy Xorg config files"
-  copy: >
-          src=etc/X11/{{ item }}
-          dest=/etc/X11/{{ item }}
-  with_items:
-          - xorg.conf
-  when: motherboard.stdout == "Z97-PRO GAMER" or motherboard.stdout == '8053'
-  tags:
-          - ca_config
-          - xorg
+- name: "Setup automatic login 18.04"
+  template: >
+          src=custom.j2
+          dest=/etc/gdm3/custom.conf
+  when:   codename.stdout == 'bionic'
+  tags:   ca_config
 
 ## VNC
 
@@ -290,30 +303,22 @@
   when: vnc_change.changed and ansible_connection != "local"
   tags:
           - vnc
-# old way to do systemd
-# - name: vnc - reload systemd
-#   shell: systemctl daemon-reload
-#   when: vnc_change.changed
-#   tags:
-#           - vnc
-#
-# - name: vnc - start x11vnc service
-#   shell: systemctl start x11vnc
-#   when: vnc_change.changed
-#   tags:
-#           - vnc
-#
-# - name: vnc - enable x11vnc service on boot
-#   shell: systemctl enable x11vnc
-#   when: vnc_change.changed
-#   tags:
-#           - vnc
 
-## UNITY DESKTOP
+# Desktop look and feel Handled by 'gsettings' by /usr/locl/bin/1st-run ran on first reboot
 
-# Handled by 'gsettings' by /usr/locl/bin/1st-run ran on first reboot
+## CREATE SYSTEM FILES
 
-## BLUETOOTH
+- name: create rc.local file
+  file:
+    path: /etc/rc.local
+    state: touch
+
+- name: create /etc/default/rcS
+  file:
+    path: /etc/default/rcS
+    state: touch
+
+## DEATH TO BLUETOOTH
 
 - name: "Stop Bluetooth Service"
   systemd: >
@@ -342,25 +347,7 @@
           - disable_bluetooth
 
 ## NETWORKING
-# NOT NEEDED, ntwork manager auto sets this anyway
-# - name: "Setup DHCP Network Interfaces"
-#   template: >
-#           src=interfaces-dhcp.j2
-#           dest=/etc/network/interfaces
-#           backup=yes
-#   register: networkmgmt
-#   tags:
-#           - network
-#           - interfaces
-#
-# - name: "Restart Networking"
-#   service: >
-#           name=network-manager
-#           state=restarted
-#   when: networkmgmt.changed
-#   tags:
-#           - network
-#           - interfaces
+# network manager auto sets DHCP
 
 - name: "Setup /etc/hostname"
   template: >
@@ -486,10 +473,10 @@
   tags:   iptables
 
 - name: "Install ferm Iptables config tool"
-  apt: >
-          pkg=ferm
-          state=latest
-          dpkg_options='force-confold,force-confdef'
+  apt:
+    name: ferm
+    state: latest
+    dpkg_options: 'force-confold,force-confdef'
   register: ferm
   tags:  iptables
 
@@ -499,118 +486,6 @@
          state=reloaded
   when:  ferm.changed
   tags:  iptables
-
-## NAGIOS
-
-- name: "Install packages required by nagios-nrpe"
-  apt: >
-          pkg={{ item }}
-          state=present
-  with_items:
-          - nagios-nrpe-server
-          - nagios-plugins
-          - libnagios-plugin-perl
-  tags:   nagios
-
-- name: "Configure nagios-nrpe-server"
-  template: >
-          src=nrpe.j2
-          dest=/etc/nagios/nrpe.cfg
-  tags:
-          - nagios
-          - nagios_config
-
-- name: "Copy custom nagios plugins to nagios dir"
-  copy: >
-          src={{ item }}
-          dest=/usr/lib/nagios/plugins/
-          mode=0755
-  with_items:
-          - check_mic
-          - check_blinkstick
-          - check_linux_stats.pl
-          - check_low_load
-  tags:
-          - nagios
-          - nagios_plugins
-
-- name: "Install check_linux_stats dependancy libsys-statistics-linux-perl Package"
-  apt: >
-          pkg=libsys-statistics-linux-perl
-          state=latest
-          force=yes
-  tags:
-          - nagios
-          - nagios_plugins
-
-- name: "Copy check_lm_sensors nagios plugin"
-  copy: >
-          src={{ item }}
-          dest=/usr/lib/nagios/plugins/
-          mode=0755
-  with_items:
-          - check_lm_sensors
-  tags:
-          - nagios
-          - nagios_plugins
-          - sensors
-
-- name: "Install lm-sensors Package"
-  apt: >
-          pkg=lm-sensors
-          state=latest
-          force=yes
-  register: sensor_change
-  tags:
-          - nagios
-          - sensors
-
-- name: "Run lm-sensors auto-conf"
-  shell: >
-          /usr/sbin/sensors-detect --auto;
-  when: sensor_change.changed
-  tags:
-          - nagios
-          - sensors
-
-# - name: "Add kernel module coretemp for lm-sensors"
-#   lineinfile: >
-#           dest=/etc/modules
-#           line="coretemp"
-#           state=present
-#           insertafter=EOF
-#           regexp='^coretemp?'
-#   tags:
-#           - nagios
-#           - sensors
-
-# - name: "Add kernel module it87 for lm-sensors"
-#   lineinfile: >
-#           dest=/etc/modules
-#           line="it87"
-#           state=present
-#           insertafter=EOF
-#           regexp='^it87?'
-#   tags:
-#           - nagios
-#           - sensors
-
-- name: "Restart kernel modules"
-  service: >
-          name=module-init-tools
-          state=restarted
-  when: sensor_change.changed
-  tags:
-          - nagios
-          - sensors
-
-- name: "Restart nagios-nrpe"
-  service: >
-          name=nagios-nrpe-server
-          state=restarted
-  tags:
-          - nagios
-          - nagios_config
 
 ## CA
 
@@ -769,16 +644,7 @@
   tags:
           - cronjobs
           - rtcwake
-# In 16.04 TRIM *should* be handled by the OS
-# - name: "TRIM weekly cron job script"
-#   template: >
-#           src=fstrim.j2
-#           dest=/etc/cron.weekly/fstrim
-#           mode=755
-#   tags:
-#           - cronjobs
-#           - trim
-#           - scripts
+
 - name: "Configure passwordless reboot for ca user"
   lineinfile: >
           dest=/etc/sudoers
